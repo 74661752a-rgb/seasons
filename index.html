@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>24절기 쉽게 보기</title>
+<style>
+:root{--bg:#faf8f3;--ink:#2b2b2b;--sub:#6b6b6b;--card:#fff;--line:#e6e1d6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;font-size:18px;line-height:1.6}
+.wrap{max-width:860px;margin:0 auto;padding:0 18px}
+header{padding:24px 0 6px}
+h1{margin:0 0 4px;font-size:27px}
+.lead{color:var(--sub);margin:0;font-size:16px}
+.nav{display:flex;gap:8px;margin:14px 0;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+.nav button{flex:1;padding:12px 4px;border:2px solid var(--line);border-radius:12px;background:var(--card);font:700 17px inherit;font-family:inherit;cursor:pointer}
+.nav button[aria-selected=true]{background:#2b2b2b;color:#fff;border-color:#2b2b2b}
+.info{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.info b{color:#8a5a00}
+.view{display:none}.view.on{display:block}
+
+/* 달력 */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+.calhead h2{margin:0;font-size:22px}
+.calhead button{border:2px solid var(--line);background:var(--card);border-radius:10px;font-size:18px;padding:6px 14px;cursor:pointer;font-family:inherit}
+.today-btn{font-size:15px!important}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;font-weight:700;color:var(--sub);font-size:15px;padding:4px 0}
+.dow:first-child{color:#c0392b}.dow:nth-child(7){color:#2f6fc0}
+.day{min-height:62px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:4px 4px 2px;cursor:pointer;text-align:left;font-family:inherit;font-size:16px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.day.empty{background:transparent;border:none;cursor:default}
+.day .n{font-weight:700}
+.day.sun .n{color:#c0392b}.day.sat .n{color:#2f6fc0}
+.day .t{font-size:12.5px;font-weight:700;color:#fff;border-radius:6px;padding:0 5px;line-height:1.5}
+.day.term{border-width:2px}
+.day.today .n{background:#2b2b2b;color:#fff;border-radius:50%;min-width:26px;height:26px;line-height:26px;text-align:center;padding:0 2px}
+.day.sel{outline:3px solid #2b2b2b;outline-offset:1px}
+.day:hover:not(.empty){background:#f4efe3}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin:8px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.detail{border:1px solid var(--line);border-left:8px solid var(--c,#999);background:var(--card);border-radius:14px;padding:14px 16px;margin-top:12px}
+.detail .dt{color:var(--sub);font-size:15px}
+.detail .big{font-size:26px;font-weight:800;margin:2px 0}
+.detail .big small{font-size:17px;color:var(--sub);font-weight:400;margin-left:6px}
+.detail .row{margin:4px 0}
+.pill{display:inline-block;background:var(--c);color:#fff;border-radius:999px;padding:1px 10px;font-size:14px;margin-right:6px}
+.bar{height:10px;background:#eee;border-radius:99px;overflow:hidden;margin:8px 0 2px}
+.bar>div{height:100%;background:var(--c)}
+.tip{background:var(--tint,#f5f5f5);border-radius:10px;padding:8px 12px;font-size:16px;margin-top:8px}
+
+/* 계절 카드 */
+.tabs{display:flex;gap:8px;margin:6px 0 12px}
+.tab{flex:1;padding:11px 4px;border:2px solid var(--line);border-radius:12px;background:var(--card);font:700 18px inherit;font-family:inherit;cursor:pointer}
+.tab[aria-selected=true]{color:#fff!important;border-color:transparent}
+.grid{display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-left:8px solid var(--c);border-radius:14px;padding:14px 16px;position:relative;cursor:pointer}
+.card.now{outline:3px solid var(--c);outline-offset:2px}
+.badge{position:absolute;top:10px;right:12px;font-size:13px;background:var(--c);color:#fff;border-radius:999px;padding:2px 10px}
+.no{display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;background:var(--c);color:#fff;font-size:15px;font-weight:700;margin-right:8px}
+.name{font-size:24px;font-weight:800}
+.hanja{color:var(--sub);margin-left:6px}
+.meta{color:var(--sub);font-size:16px;margin:4px 0}
+.mean{font-size:19px;margin:6px 0}
+.card .tip{background:var(--tint)}
+
+/* 요약 */
+h3{font-size:21px;margin:22px 0 8px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);font-size:17px}
+td,th{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left}
+th{background:#f1ece0}
+.year{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}
+.chip{border-radius:10px;padding:8px 10px;color:#fff;font-weight:700;font-size:16px;cursor:pointer;border:none;text-align:left;font-family:inherit}
+.chip small{display:block;font-weight:400;opacity:.92;font-size:13px}
+
+.memo{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 16px;margin-top:12px}
+.memo h4{margin:0 0 8px;font-size:18px}
+.memo textarea{width:100%;min-height:96px;border:2px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:17px;resize:vertical}
+.memo .bt{display:flex;gap:8px;align-items:center;margin-top:8px}
+.memo button{border:none;border-radius:10px;padding:10px 18px;font:700 16px inherit;font-family:inherit;cursor:pointer;background:#2b2b2b;color:#fff}
+.memo button.del{background:#eee;color:#444}
+.memo .st{color:var(--sub);font-size:14px}
+.day .mk{position:absolute;top:2px;right:4px;font-size:12px}
+.day{position:relative}
+.mlist{display:grid;gap:10px}
+.mitem{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.mitem .d{font-weight:700}.mitem .p{color:var(--sub);font-size:16px;white-space:pre-wrap;margin-top:2px}
+
+.cityrow{display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:16px}
+.cityrow select{font:inherit;font-size:16px;padding:6px 10px;border:2px solid var(--line);border-radius:10px;background:var(--card)}
+.day .tp{font-size:12px;color:var(--sub);margin-top:auto}
+.temp{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.temp div{flex:1;min-width:90px;background:#f6f3ea;border-radius:10px;padding:6px 10px;text-align:center}
+.temp b{display:block;font-size:22px}
+.temp .hi b{color:#c0392b}.temp .lo b{color:#2f6fc0}
+.temp small{color:var(--sub);font-size:13px}
+
+header{padding:14px 0 0}
+h1{font-size:18px;margin:0;color:var(--sub);font-weight:700}
+.nav{margin:8px 0 12px}
+.hero{background:var(--tint,#f5f5f5);border-left:10px solid var(--c,#999);border-radius:16px;padding:18px 18px 16px;margin-bottom:16px}
+.hero .dt{color:var(--sub);font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.hero .dt button{font:700 14px inherit;font-family:inherit;border:none;background:#2b2b2b;color:#fff;border-radius:999px;padding:4px 12px;cursor:pointer}
+.hero .name{font-size:clamp(44px,13vw,64px);font-weight:900;line-height:1.1;color:var(--c);margin:4px 0}
+.hero .name small{font-size:20px;color:var(--sub);font-weight:500;margin-left:8px}
+.hero .line{font-size:19px;font-weight:700;margin:2px 0}
+.hero .mean{font-size:19px;margin:8px 0 0}
+.hero .sub{color:var(--sub);font-size:15px;margin-top:6px}
+.card .tip{background:none;padding:0;color:var(--sub);font-size:15px;margin-top:2px}
+.memo h4{font-size:16px;color:var(--sub)}
+footer{color:var(--sub);font-size:14px;padding:24px 0 40px}
+@media(max-width:480px){.day{min-height:54px;padding:3px}.day .t{font-size:11px;padding:0 3px}}
+
+/* ===== 휴대폰 화면 크기 (PC에서도 폰 크기로 가운데 표시) ===== */
+html{background:#e9e5da}
+body{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);box-shadow:0 0 24px rgba(0,0,0,.12);font-size:17px}
+.wrap{max-width:none;padding:0 14px}
+.nav button{font-size:15px;padding:10px 2px}
+.day{min-height:52px;font-size:15px}
+.day .t{font-size:11px;padding:0 3px}
+.hero{padding:16px 14px 14px}
+.hero .line,.hero .mean{font-size:17px}
+.name{font-size:21px}
+td,th{padding:8px 8px;font-size:15px}
+@media(min-width:431px){body{margin:16px auto;border-radius:22px;min-height:calc(100vh - 32px);overflow:hidden}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>🌿 24절기</h1></header>
+
+<div class="nav" role="tablist">
+  <button data-v="cal" aria-selected="true">📅 달력</button>
+  <button data-v="season" aria-selected="false">🍃 계절별</button>
+  <button data-v="memo" aria-selected="false">📝 메모</button>
+  <button data-v="sum" aria-selected="false">📋 요약</button>
+</div>
+
+<!-- 달력 -->
+<section class="view on" id="v-cal">
+  <div id="detail"></div>
+  <div class="calhead">
+    <button id="prev" aria-label="이전 달">◀</button>
+    <h2 id="ym"></h2>
+    <button id="next" aria-label="다음 달">▶</button>
+  </div>
+  <div class="cal" id="cal"></div>
+  <div class="cityrow"><label for="city">기온 지역</label><select id="city"><option>서울</option><option>부산</option></select></div>
+  <div class="memo" id="memo">
+    <h4 id="memo-title"></h4>
+    <textarea id="memo-text" placeholder="이 날의 메모를 적어보세요"></textarea>
+    <div class="bt"><button id="memo-save">저장</button><button class="del" id="memo-del">삭제</button><span class="st" id="memo-st"></span></div>
+  </div>
+</section>
+
+<!-- 메모 모아보기 -->
+<section class="view" id="v-memo">
+  <div class="info"><b>내 메모 모아보기</b> · 날짜별로 적어둔 메모예요. 누르면 달력의 그 날짜로 이동해요.</div>
+  <div class="mlist" id="mlist"></div>
+</section>
+
+<!-- 계절별 -->
+<section class="view" id="v-season">
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="cards"></div>
+</section>
+
+<!-- 요약 -->
+<section class="view" id="v-sum">
+  <div class="info"><b>조상의 지혜</b> · 우리 민족은 절기에 맞춰 <b>농사</b>를 짓고 겨울 준비를 했으며, <b>의식주</b>(입을 것·먹을 것·살 곳)를 준비하고 관리했습니다.</div>
+  <h3>🔑 글자만 알면 반은 외운 것</h3>
+  <table>
+    <tr><th>글자</th><th>뜻</th><th>해당 절기</th></tr>
+    <tr><td><b>입(立)</b></td><td>서다 → 계절이 <b>시작</b></td><td>입춘·입하·입추·입동</td></tr>
+    <tr><td><b>분(分)</b></td><td>나누다 → 낮과 밤 길이가 <b>같음</b></td><td>춘분·추분</td></tr>
+    <tr><td><b>지(至)</b></td><td>이르다 → 낮/밤이 <b>가장 긴 때</b></td><td>하지(낮 최장)·동지(밤 최장)</td></tr>
+    <tr><td><b>소(小)·대(大)</b></td><td>더위·추위·눈의 <b>정도</b></td><td>소서/대서, 소한/대한, 소설/대설</td></tr>
+    <tr><td><b>비·이슬·서리</b></td><td>날씨를 그대로 이름에 씀</td><td>우수·곡우(비), 백로·한로(이슬), 상강(서리)</td></tr>
+  </table>
+  <h3>🌡️ 절기별 평년 기온</h3>
+  <table id="tt"></table>
+</section>
+
+<footer>※ 절기 날짜는 해마다 하루쯤 달라질 수 있어요. ※ 기온은 기상청 평년(1991~2020)에 가까운 추정 평균이며 올해 실제 기온이 아니에요. ※ 외우기 요령은 이해를 돕기 위한 덧붙임이에요.</footer>
+</div>
+<script>
+const S=[
+ {k:'봄',h:'春',c:'#d9628b',t:'#fdeef3',intro:'봄: 입춘 → 우수 → 경칩 → 춘분 → 청명 → 곡우',
+  items:[
+  ['입춘','立春',2,4,'정월','봄이 시작되는 때','입(立)=시작. 봄의 시작!'],
+  ['우수','雨水',2,18,'정월','비가 와서 얼음이 녹아 물이 됨. 봄 기운이 돈다.','雨(비) + 水(물): 비가 오고 얼음이 물로'],
+  ['경칩','驚蟄',3,5,'이월','동물들이 겨울잠에서 깨어나는 때','놀랄 경(驚) + 숨을 칩(蟄): 숨어 있던 벌레가 깜짝 깨어남'],
+  ['춘분','春分',3,20,'이월','밤과 낮의 길이가 같아지는 때','분(分)=똑같이 나눔. 봄에 낮밤 같음'],
+  ['청명','淸明',4,5,'삼월','날씨가 맑고 밝을 때(청명한 날씨)','맑을 청(淸) + 밝을 명(明) = 맑고 밝다'],
+  ['곡우','穀雨',4,20,'삼월','봄비가 내려 백곡이 윤택해지는 때','곡식 곡(穀) + 비 우(雨): 곡식을 키우는 비']]},
+ {k:'여름',h:'夏',c:'#2e9e5b',t:'#e8f6ed',intro:'여름: 입하 → 소만 → 망종 → 하지 → 소서 → 대서',
+  items:[
+  ['입하','立夏',5,6,'사월','여름이 시작되는 때','입(立)=시작. 여름의 시작!'],
+  ['소만','小滿',5,21,'사월','여름 기분이 나는 때(조금 더움)','소(小)=조금. 조금 차오르는(滿) 더위'],
+  ['망종','芒種',6,6,'오월','보리는 익고 모내기를 하는 때','망(芒)=까끄라기(곡식 끝의 뾰족한 털). 씨 뿌릴 곡식'],
+  ['하지','夏至',6,21,'오월','낮이 길고 밤이 가장 짧을 때','지(至)=극점. 여름의 낮이 가장 김'],
+  ['소서','小暑',7,7,'유월','조금 덥다. 본격적인 더위에 접어든 때','소(小)=조금 더움'],
+  ['대서','大暑',7,23,'유월','많이 덥다. 더위가 최고조에 달하는 때','대(大)=매우 더움. 더위의 정점']]},
+ {k:'가을',h:'秋',c:'#d27a1a',t:'#fcf1e2',intro:'가을: 입추 → 처서 → 백로 → 추분 → 한로 → 상강',
+  items:[
+  ['입추','立秋',8,7,'칠월','가을로 접어드는 때','입(立)=시작. 가을의 시작!'],
+  ['처서','處暑',8,23,'칠월','아침저녁으로 선선해지는 때(더위가 아직 머물러 있음)','곳 처(處)=머물다. 더위가 물러가는 시기'],
+  ['백로','白露',9,8,'팔월','이슬이 내리고 가을 기운이 완연해지는 때','흰 백(白) + 이슬 로(露): 하얀 이슬'],
+  ['추분','秋分',9,23,'팔월','밤낮의 길이가 같아지는 때','분(分)=똑같이 나눔. 가을에 낮밤 같음'],
+  ['한로','寒露',10,8,'구월','초목에 찬이슬이 맺히는 때','찰 한(寒) + 이슬 로(露): 차가운 이슬'],
+  ['상강','霜降',10,24,'구월','서리가 내리기 시작하는 때','서리 상(霜) + 내릴 강(降): 서리가 내림']]},
+ {k:'겨울',h:'冬',c:'#3b73c4',t:'#e9f0fb',intro:'겨울: 입동 → 소설 → 대설 → 동지 → 소한 → 대한',
+  items:[
+  ['입동','立冬',11,7,'시월','겨울이 시작되는 때','입(立)=시작. 겨울의 시작!'],
+  ['소설','小雪',11,22,'동짓달','겨울 기분이 점점 나기 시작하는 때','소(小)=조금. 눈이 조금 내림'],
+  ['대설','大雪',12,8,'동짓달','눈이 많이 오는 때','대(大)=많이. 눈이 많이 옴'],
+  ['동지','冬至',12,22,'동짓달','밤이 길고 낮이 가장 짧을 때','지(至)=극점. 겨울의 밤이 가장 김'],
+  ['소한','小寒',1,5,'섣달','겨울이 고비에 접어들어 몹시 추운 때','소(小)=조금이지만 실제로 가장 추운 때가 많음'],
+  ['대한','大寒',1,20,'섣달','추위가 최고조에 달하는 때','대(大)=매우 추움. 추위의 정점']]}
+];
+// 날짜순 평탄 목록
+const T=[];S.forEach((s,si)=>s.items.forEach((it,i)=>T.push({s,si,i,n:it[0],hj:it[1],m:it[2],d:it[3],lm:it[4],mean:it[5],tip:it[6]})));
+T.sort((a,b)=>(a.m*100+a.d)-(b.m*100+b.d));
+const termOn=(m,d)=>T.find(t=>t.m===m&&t.d===d);
+const DAY=864e5;
+const dt=(y,m,d)=>new Date(y,m-1,d);
+// 평년 월별 기온(℃, 1991~2020 기상청 평년값에 가까운 근사값 · 참고용)
+const CITY={
+ '서울':{mean:[-1.9,0.4,5.7,12.2,17.8,22.4,25.9,26.4,21.8,14.8,7.2,0.0],max:[2.1,5.0,11.1,18.2,23.5,27.5,29.9,30.5,26.2,20.2,12.6,4.3],min:[-5.7,-3.9,0.9,7.0,12.9,18.4,22.6,22.9,17.8,9.8,2.4,-3.7]},
+ '부산':{mean:[3.9,5.5,9.3,14.2,18.2,21.7,25.1,26.6,22.9,18.0,12.1,6.2],max:[8.6,10.2,14.2,19.0,22.4,25.2,28.3,30.0,26.6,22.3,16.7,10.9],min:[0.0,1.6,5.3,9.9,14.5,18.7,22.5,23.5,19.7,14.1,8.0,2.0]}
+};
+let city='서울';try{city=localStorage.getItem('solarterm-city')||'서울'}catch(e){}
+if(!CITY[city])city='서울';
+function temp(date,kind){
+  const a=CITY[city][kind],len=new Date(date.getFullYear(),date.getMonth()+1,0).getDate();
+  const pos=date.getMonth()+(date.getDate()-0.5)/len-0.5; // 월 중앙에서 해당 월 값
+  const i0=Math.floor(pos),f=pos-i0;
+  const v0=a[(i0+12)%12],v1=a[(i0+13)%12];
+  return v0+(v1-v0)*f;
+}
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
+// 해당 날짜 기준 현재 절기·다음 절기
+function status(date){
+  const y=date.getFullYear();
+  const pts=[];
+  [y-1,y,y+1].forEach(yy=>T.forEach(t=>pts.push({t,date:dt(yy,t.m,t.d)})));
+  pts.sort((a,b)=>a.date-b.date);
+  const x=dt(y,date.getMonth()+1,date.getDate());
+  let idx=-1;pts.forEach((p,k)=>{if(p.date<=x)idx=k});
+  const cur=pts[idx],next=pts[idx+1];
+  return {cur:cur.t,since:Math.round((x-cur.date)/DAY),next:next.t,until:Math.round((next.date-x)/DAY),span:Math.round((next.date-cur.date)/DAY)};
+}
+const now=new Date();
+let vy=now.getFullYear(),vm=now.getMonth()+1;
+let selDate=dt(now.getFullYear(),now.getMonth()+1,now.getDate());
+const fmt=d=>d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+')';
+const cs=t=>t.s;
+
+function renderCal(){
+  document.getElementById('ym').textContent=vy+'년 '+vm+'월';
+  const g=document.getElementById('cal');g.innerHTML='';
+  '일월화수목금토'.split('').forEach(w=>{const e=document.createElement('div');e.className='dow';e.textContent=w;g.appendChild(e)});
+  const first=dt(vy,vm,1).getDay(),len=new Date(vy,vm,0).getDate();
+  for(let k=0;k<first;k++){const e=document.createElement('div');e.className='day empty';g.appendChild(e)}
+  for(let d=1;d<=len;d++){
+    const date=dt(vy,vm,d),w=date.getDay(),t=termOn(vm,d);
+    const b=document.createElement('button');b.className='day'+(w===0?' sun':w===6?' sat':'');
+    if(t){b.classList.add('term');b.style.borderColor=cs(t).c}
+    if(date.getTime()===dt(now.getFullYear(),now.getMonth()+1,now.getDate()).getTime())b.classList.add('today');
+    if(date.getTime()===selDate.getTime())b.classList.add('sel');
+    b.innerHTML=(memos[key(date)]?'<span class="mk">📝</span>':'')+'<span class="n">'+d+'</span>'+(t?'<span class="t" style="background:'+cs(t).c+'">'+t.n+'</span>':'');
+    b.onclick=()=>{selDate=date;renderCal();renderDetail();renderMemo()};
+    g.appendChild(b)}
+}
+function renderDetail(){
+  const date=selDate,st=status(date),t=termOn(date.getMonth()+1,date.getDate());
+  const cur=t||st.cur,s=cur.s,el=document.getElementById('detail');
+  const isToday=key(date)===key(new Date());
+  el.className='hero';el.style.setProperty('--c',s.c);el.style.setProperty('--tint',s.t);
+  const line=t?s.k+' · 절기 당일':s.k+' · '+st.cur.n+' '+(st.since+1)+'일째';
+  el.innerHTML=
+   '<div class="dt"><span>'+(isToday?'오늘 · ':'')+fmt(date)+'</span>'+(isToday?'':'<button id="goToday">오늘로</button>')+'</div>'+
+   '<div class="name">'+cur.n+'<small>'+cur.hj+'</small></div>'+
+   '<div class="line">'+line+' · 다음 '+st.next.n+'까지 '+st.until+'일</div>'+
+   '<div class="mean">'+cur.mean+'</div>'+
+   '<div class="sub">💡 '+cur.tip+'</div>'+
+   '<div class="sub">🌡️ '+city+' 평년 '+f1(temp(date,'mean'))+'° (최고 '+f1(temp(date,'max'))+'° / 최저 '+f1(temp(date,'min'))+'°)</div>';
+  const b=document.getElementById('goToday');if(b)b.onclick=goToday;
+}
+
+// 계절별
+let sel=status(selDate).cur.si;
+function renderSeason(){
+  const tb=document.getElementById('tabs');tb.innerHTML='';
+  S.forEach((s,i)=>{const b=document.createElement('button');b.className='tab';b.setAttribute('aria-selected',i===sel);b.textContent=s.h+' '+s.k;
+    if(i===sel)b.style.background=s.c;else b.style.color=s.c;b.onclick=()=>{sel=i;renderSeason()};tb.appendChild(b)});
+  const s=S[sel];
+  const g=document.getElementById('cards');g.innerHTML='';
+  const curT=status(dt(now.getFullYear(),now.getMonth()+1,now.getDate())).cur;
+  s.items.forEach((it,i)=>{
+    const t=T.find(x=>x.si===sel&&x.i===i);
+    const d=document.createElement('div');d.className='card';d.style.setProperty('--c',s.c);d.style.setProperty('--tint',s.t);
+    const isNow=curT.si===sel&&curT.i===i;if(isNow)d.classList.add('now');
+    d.innerHTML=(isNow?'<span class="badge">지금 시기</span>':'')+
+      '<div><span class="no">'+(i+1)+'</span><span class="name">'+it[0]+'</span><span class="hanja">'+it[1]+'</span></div>'+
+      '<div class="meta">양력 '+it[2]+'월 '+it[3]+'일경 · 음력 '+it[4]+'</div>'+
+      '<div class="mean">'+it[5]+'</div><div class="tip">💡 '+it[6]+'</div>';
+    d.title='누르면 달력에서 보기';
+    d.onclick=()=>goDate(t.m,t.d);
+    g.appendChild(d)});
+}
+function goDate(m,d){
+  vy=now.getFullYear(); vm=m; selDate=dt(vy,m,d);
+  show('cal');renderCal();renderDetail();renderMemo();window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ===== 메모 =====
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const LS='solarterm-memos';
+let memos={};
+try{memos=JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){memos={}}
+const setSt=t=>{document.getElementById('memo-st').textContent=t};
+function cache(){try{localStorage.setItem(LS,JSON.stringify(memos))}catch(e){}}
+function renderMemo(){
+  document.getElementById('memo-title').textContent='📝 '+(selDate.getMonth()+1)+'월 '+selDate.getDate()+'일 메모';
+  document.getElementById('memo-text').value=memos[key(selDate)]||'';
+  setSt('');
+}
+function renderMList(){
+  const l=document.getElementById('mlist');l.innerHTML='';
+  const ks=Object.keys(memos).filter(k=>memos[k]).sort();
+  if(!ks.length){l.innerHTML='<div class="info">아직 메모가 없어요. 달력에서 날짜를 눌러 적어보세요.</div>';return}
+  ks.forEach(k=>{const [y,m,d]=k.split('-').map(Number);const dd=dt(y,m,d);
+    const e=document.createElement('div');e.className='mitem';
+    const t=termOn(m,d);
+    e.innerHTML='<div class="d">'+fmt(dd)+(t?' · '+t.n:'')+'</div><div class="p"></div>';
+    e.querySelector('.p').textContent=memos[k];
+    e.onclick=()=>{vy=y;vm=m;selDate=dd;show('cal');renderCal();renderDetail();renderMemo();window.scrollTo({top:0,behavior:'smooth'})};
+    l.appendChild(e)});
+}
+function saveMemo(k,text){
+  if(text)memos[k]=text;else delete memos[k];
+  cache();renderCal();renderMList();
+  setSt('저장됨 ✓ (이 기기에 보관)');
+}
+document.getElementById('memo-save').onclick=()=>saveMemo(key(selDate),document.getElementById('memo-text').value.trim());
+document.getElementById('memo-del').onclick=()=>{document.getElementById('memo-text').value='';saveMemo(key(selDate),'')};
+function show(v){
+  document.querySelectorAll('.nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+document.getElementById('prev').onclick=()=>{vm--;if(vm<1){vm=12;vy--}renderCal()};
+document.getElementById('next').onclick=()=>{vm++;if(vm>12){vm=1;vy++}renderCal()};
+function goToday(){vy=now.getFullYear();vm=now.getMonth()+1;selDate=dt(vy,vm,now.getDate());renderCal();renderDetail();renderMemo()}
+const cs_=document.getElementById('city');cs_.value=city;
+cs_.onchange=()=>{city=cs_.value;try{localStorage.setItem('solarterm-city',city)}catch(e){}renderCal();renderDetail();renderTT()};
+function renderTT(){
+  const el=document.getElementById('tt');
+  el.innerHTML='<tr><th>절기</th><th>날짜</th><th>평균</th><th>최고</th><th>최저</th></tr>'+T.map(t=>{const d=dt(2026,t.m,t.d);
+    return '<tr><td><b style="color:'+t.s.c+'">'+t.n+'</b></td><td>'+t.m+'/'+t.d+'</td><td>'+f1(temp(d,'mean'))+'°</td><td>'+f1(temp(d,'max'))+'°</td><td>'+f1(temp(d,'min'))+'°</td></tr>'}).join('');
+}
+renderCal();renderDetail();renderSeason();renderMemo();renderMList();renderTT();
+</script>
+</body>
+</html>
